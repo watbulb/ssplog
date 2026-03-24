@@ -78,29 +78,29 @@ namespace ssp::log::detail
 namespace ssp::log {
 
 struct log_field {
-  const std::string &key;
+  const std::string key;
   const std::string value;
 
   template<detail::serializable T>
-  constexpr log_field(const std::string &k, const T &v)
+  constexpr log_field(decltype(key) &k, const T &v)
     : key{k}, value{detail::serialize(v)}
     {};
 };
 struct log_fields : std::vector<log_field> {
-  const std::vector<log_field> fields;
+  const std::vector<log_field> items;
 
   template <detail::serializable T>
-  constexpr log_fields(const std::string &k, const T &v)
-    : fields{{detail::serialize(k), detail::serialize(v)}}
+  constexpr log_fields(decltype(log_field::key) &k, const T &v)
+    : items{{k, detail::serialize(v)}}
     {};
 
-  template<detail::serializable K = const std::string &, detail::serializable V = const std::string &>
+  template<detail::serializable K = decltype(log_field::key) &, detail::serializable V = K>
   constexpr log_fields(const std::initializer_list<log_field> &fs)
-    : fields{fs}
+    : items{fs}
     {}
 
   constexpr log_fields(const log_field &f)
-    : fields{f}
+    : items{f}
     {};
 };
 
@@ -138,10 +138,10 @@ public:
       ostream << "time="    << '[' << detail::serialize(clock_type::now()) << ']' << ' ';
       ostream << "level="   << '[' << detail::serialize(lvl) << ']' <<  ' ';
       ostream << "message=" << std::quoted(msg);
-      for (const auto &[key, value] : m_globals) {
+      for (const auto &[key, value] : m_globals.items) {
         ostream << " " << key << "=" << value;
       }
-      for (const auto &[key, value] : fields) {
+      for (const auto &[key, value] : fields.items) {
         ostream << " " << key << "=" << value;
       }
       m_printer(std::move(ostream.str()));
